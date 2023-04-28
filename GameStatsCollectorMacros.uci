@@ -1,0 +1,15 @@
+`define FCDEBUG 1
+
+`define glog(msg, cond, tag) \
+    `log(self.class.name $ "::" $ GetFuncName() $ "(): " $ `msg, \
+    `cond, \
+    `if(`tag) name("GameStatsCollector-" $ string(`tag)) `else 'GameStatsCollector' `endif)
+
+`define gwarn(msg, cond) `glog(`msg, `cond, 'WARNING')
+`define gerror(msg, cond) `glog(`msg, `cond, 'ERROR')
+
+`ifdef(FCDEBUG)
+    `define fcdebug(msg, cond) `glog(`msg, `cond, 'DEBUG')
+`else
+    `define fcdebug(msg, cond, tag)
+`endif
