@@ -165,7 +165,7 @@ final function WriteGFXLog(
     }
 }
 
-// ID.A ID.B 'Name' Location Team
+// ID.A ID.B 'Name' Location Team RoleType
 final private function LogSpawn(ROPawn ROP, ROPlayerController ROPC,
     ROPlayerReplicationInfo ROPRI)
 {
@@ -179,12 +179,14 @@ final private function LogSpawn(ROPawn ROP, ROPlayerController ROPC,
             @ "'" $ ROPRI.PlayerName $ "'"
             @ ROP.Location
             @ ROPRI.Team.TeamIndex
+            @ ROPRI.RoleInfo.RoleType
         );
     }
 }
 
 // KillerID.A KillerID.B KilledID.A KilledID.B KillerTeam KilledTeam
 // HitLocation Momentum DamageType HitBone HitBoneIndex LastDamagedFromLocation
+// Killer.Score Killer.MatchSore
 final private function LogKill(ROPlayerController Killer, ROPlayerController Killed,
     ROPawn KilledPawn)
 {
@@ -203,6 +205,8 @@ final private function LogKill(ROPlayerController Killer, ROPlayerController Kil
         @ KilledPawn.LastTakeHitInfo.HitBone
         @ KilledPawn.LastTakeHitInfo.HitBoneIndex
         @ KilledPawn.LastDamagedFromLocation
+        @ ROPlayerReplicationInfo(Killer.PlayerReplicationInfo).Score
+        @ ROPlayerReplicationInfo(Killer.PlayerReplicationInfo).MatchScore
     );
 }
 
@@ -213,7 +217,7 @@ final private function LogDamage(int Damage, Pawn Injured,
     class<DamageType> DamageType, Actor DamageCauser)
 {
     WriteQueue.AddItem(
-        "DAMAGE"
+        "DMG"
         @ WorldInfo.RealTimeSeconds
         @ Damage
         @ Injured.PlayerReplicationInfo.UniqueId.Uid.A
