@@ -1,5 +1,6 @@
 class GameStatsCollector extends ROMutator
-    config(Mutator_GameStatsCollector);
+    config(Mutator_GameStatsCollector)
+    dependson(GSOPlayerController);
 
 `define MUTATOR(dummy)
 `include(Engine\Classes\GameStats.uci);
@@ -7,8 +8,142 @@ class GameStatsCollector extends ROMutator
 
 var private GSCUtils Utils;
 
+var private FileWriter GFXLogWriter;
+
 var private FileWriter Writer;
 var private array<string> WriteQueue;
+
+final function WriteGFXLog(
+    const out GSOPlayerController.GSO_TrackedGFXSettings TrackedGFXSettings,
+    PlayerReplicationInfo PRI
+)
+{
+    if (WorldInfo.NetMode == NM_DedicatedServer)
+    {
+        if (GFXLogWriter != None)
+        {
+            GFXLogWriter.Logf(
+                TimeStamp()
+                @ "'" $ PRI.PlayerName $ "'"
+                @ class'OnlineSubsystem'.static.UniqueNetIdToString(PRI.UniqueID)
+                @ "GraphicsQualitySetting=" $ TrackedGFXSettings.GraphicsQualitySetting
+                @ "CharacterQualityDetail=" $ TrackedGFXSettings.CharacterQualityDetail
+                @ "TextureQualityDetail=" $ TrackedGFXSettings.TextureQualityDetail
+                @ "ShadowQualityDetail=" $ TrackedGFXSettings.ShadowQualityDetail
+                @ "LightQualityDetail=" $ TrackedGFXSettings.LightQualityDetail
+                @ "PostProcessQualityDetail=" $ TrackedGFXSettings.PostProcessQualityDetail
+                @ "bFullScreen=" $ TrackedGFXSettings.bFullScreen
+                @ "bBorderless=" $ TrackedGFXSettings.bBorderless
+                @ "bVSync=" $ TrackedGFXSettings.bVSync
+                @ "Brightness=" $ TrackedGFXSettings.Brightness
+                @ "UseHardwarePhysics=" $ TrackedGFXSettings.UseHardwarePhysics
+                @ "DetailMode=" $ TrackedGFXSettings.DetailMode
+                @ "SkeletalMeshLODBias=" $ TrackedGFXSettings.SkeletalMeshLODBias
+                @ "bUseSingleCharacterVariant=" $ TrackedGFXSettings.bUseSingleCharacterVariant
+                @ "TextureQuality.UI_LODBias=" $ TrackedGFXSettings.TextureQuality.UI_LODBias
+                @ "TextureQuality.UI_MinLODSize=" $ TrackedGFXSettings.TextureQuality.UI_MinLODSize
+                @ "TextureQuality.UI_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.UI_MaxLODSize
+                @ "TextureQuality.LightMap_LODBias=" $ TrackedGFXSettings.TextureQuality.LightMap_LODBias
+                @ "TextureQuality.LightMap_MinLODSize=" $ TrackedGFXSettings.TextureQuality.LightMap_MinLODSize
+                @ "TextureQuality.LightMap_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.LightMap_MaxLODSize
+                @ "TextureQuality.ShadowMap_LODBias=" $ TrackedGFXSettings.TextureQuality.ShadowMap_LODBias
+                @ "TextureQuality.ShadowMap_MinLODSize=" $ TrackedGFXSettings.TextureQuality.ShadowMap_MinLODSize
+                @ "TextureQuality.ShadowMap_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.ShadowMap_MaxLODSize
+                @ "TextureQuality.Character_LODBias=" $ TrackedGFXSettings.TextureQuality.Character_LODBias
+                @ "TextureQuality.Character_MinLODSize=" $ TrackedGFXSettings.TextureQuality.Character_MinLODSize
+                @ "TextureQuality.Character_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.Character_MaxLODSize
+                @ "TextureQuality.World_LODBias=" $ TrackedGFXSettings.TextureQuality.World_LODBias
+                @ "TextureQuality.World_MinLODSize=" $ TrackedGFXSettings.TextureQuality.World_MinLODSize
+                @ "TextureQuality.World_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.World_MaxLODSize
+                @ "TextureQuality.Terrain_LODBias=" $ TrackedGFXSettings.TextureQuality.Terrain_LODBias
+                @ "TextureQuality.Terrain_MinLODSize=" $ TrackedGFXSettings.TextureQuality.Terrain_MinLODSize
+                @ "TextureQuality.Terrain_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.Terrain_MaxLODSize
+                @ "TextureQuality.TerrainSpecular_LODBias=" $ TrackedGFXSettings.TextureQuality.TerrainSpecular_LODBias
+                @ "TextureQuality.TerrainSpecular_MinLODSize=" $ TrackedGFXSettings.TextureQuality.TerrainSpecular_MinLODSize
+                @ "TextureQuality.TerrainSpecular_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.TerrainSpecular_MaxLODSize
+                @ "TextureQuality.TerrainNormalMap_LODBias=" $ TrackedGFXSettings.TextureQuality.TerrainNormalMap_LODBias
+                @ "TextureQuality.TerrainNormalMap_MinLODSize=" $ TrackedGFXSettings.TextureQuality.TerrainNormalMap_MinLODSize
+                @ "TextureQuality.TerrainNormalMap_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.TerrainNormalMap_MaxLODSize
+                @ "TextureQuality.Foliage_LODBias=" $ TrackedGFXSettings.TextureQuality.Foliage_LODBias
+                @ "TextureQuality.Foliage_MinLODSize=" $ TrackedGFXSettings.TextureQuality.Foliage_MinLODSize
+                @ "TextureQuality.Foliage_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.Foliage_MaxLODSize
+                @ "TextureQuality.FoliageSpecular_LODBias=" $ TrackedGFXSettings.TextureQuality.FoliageSpecular_LODBias
+                @ "TextureQuality.FoliageSpecular_MinLODSize=" $ TrackedGFXSettings.TextureQuality.FoliageSpecular_MinLODSize
+                @ "TextureQuality.FoliageSpecular_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.FoliageSpecular_MaxLODSize
+                @ "TextureQuality.FoliageNormalMap_LODBias=" $ TrackedGFXSettings.TextureQuality.FoliageNormalMap_LODBias
+                @ "TextureQuality.FoliageNormalMap_MinLODSize=" $ TrackedGFXSettings.TextureQuality.FoliageNormalMap_MinLODSize
+                @ "TextureQuality.FoliageNormalMap_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.FoliageNormalMap_MaxLODSize
+                @ "TextureQuality.T3PWeapon_LODBias=" $ TrackedGFXSettings.TextureQuality.T3PWeapon_LODBias
+                @ "TextureQuality.T3PWeapon_MinLODSize=" $ TrackedGFXSettings.TextureQuality.T3PWeapon_MinLODSize
+                @ "TextureQuality.T3PWeapon_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.T3PWeapon_MaxLODSize
+                @ "TextureQuality.T3PWeaponSpecular_LODBias=" $ TrackedGFXSettings.TextureQuality.T3PWeaponSpecular_LODBias
+                @ "TextureQuality.T3PWeaponSpecular_MinLODSize=" $ TrackedGFXSettings.TextureQuality.T3PWeaponSpecular_MinLODSize
+                @ "TextureQuality.T3PWeaponSpecular_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.T3PWeaponSpecular_MaxLODSize
+                @ "TextureQuality.T3PWeaponNormalMap_LODBias=" $ TrackedGFXSettings.TextureQuality.T3PWeaponNormalMap_LODBias
+                @ "TextureQuality.T3PWeaponNormalMap_MinLODSize=" $ TrackedGFXSettings.TextureQuality.T3PWeaponNormalMap_MinLODSize
+                @ "TextureQuality.T3PWeaponNormalMap_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.T3PWeaponNormalMap_MaxLODSize
+                @ "TextureQuality.Vehicle_LODBias=" $ TrackedGFXSettings.TextureQuality.Vehicle_LODBias
+                @ "TextureQuality.Vehicle_MinLODSize=" $ TrackedGFXSettings.TextureQuality.Vehicle_MinLODSize
+                @ "TextureQuality.Vehicle_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.Vehicle_MaxLODSize
+                @ "TextureQuality.VehicleSpecular_LODBias=" $ TrackedGFXSettings.TextureQuality.VehicleSpecular_LODBias
+                @ "TextureQuality.VehicleSpecular_MinLODSize=" $ TrackedGFXSettings.TextureQuality.VehicleSpecular_MinLODSize
+                @ "TextureQuality.VehicleSpecular_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.VehicleSpecular_MaxLODSize
+                @ "TextureQuality.VehicleNormalMap_LODBias=" $ TrackedGFXSettings.TextureQuality.VehicleNormalMap_LODBias
+                @ "TextureQuality.VehicleNormalMap_MinLODSize=" $ TrackedGFXSettings.TextureQuality.VehicleNormalMap_MinLODSize
+                @ "TextureQuality.VehicleNormalMap_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.VehicleNormalMap_MaxLODSize
+                @ "TextureQuality.Others_LODBias=" $ TrackedGFXSettings.TextureQuality.Others_LODBias
+                @ "TextureQuality.Others_MinLODSize=" $ TrackedGFXSettings.TextureQuality.Others_MinLODSize
+                @ "TextureQuality.Others_MaxLODSize=" $ TrackedGFXSettings.TextureQuality.Others_MaxLODSize
+                @ "TextureQuality.MinMagFilter=" $ TrackedGFXSettings.TextureQuality.MinMagFilter
+                @ "TextureQuality.MipFilter=" $ TrackedGFXSettings.TextureQuality.MipFilter
+                @ "TextureQuality.MaxAnisotropy=" $ TrackedGFXSettings.TextureQuality.MaxAnisotropy
+                @ "TextureStreamingPoolSize=" $ TrackedGFXSettings.TextureStreamingPoolSize
+                @ "ShadowQuality.bAllowWholeSceneDominantShadows=" $ TrackedGFXSettings.ShadowQuality.bAllowWholeSceneDominantShadows
+                @ "ShadowQuality.bAllowDynamicShadows=" $ TrackedGFXSettings.ShadowQuality.bAllowDynamicShadows
+                @ "ShadowQuality.MaxWholeSceneDominantShadowResolution=" $ TrackedGFXSettings.ShadowQuality.MaxWholeSceneDominantShadowResolution
+                @ "ShadowQuality.WholeSceneDynamicShadowRadius=" $ TrackedGFXSettings.ShadowQuality.WholeSceneDynamicShadowRadius
+                @ "ShadowQuality.NumWholeSceneDynamicShadowCascades=" $ TrackedGFXSettings.ShadowQuality.NumWholeSceneDynamicShadowCascades
+                @ "ShadowQuality.CascadeDistributionExponent=" $ TrackedGFXSettings.ShadowQuality.CascadeDistributionExponent
+                @ "ShadowQuality.ShadowFadeResolution=" $ TrackedGFXSettings.ShadowQuality.ShadowFadeResolution
+                @ "ShadowQuality.MaxShadowResolution=" $ TrackedGFXSettings.ShadowQuality.MaxShadowResolution
+                @ "ShadowQuality.ShadowTexelsPerPixel=" $ TrackedGFXSettings.ShadowQuality.ShadowTexelsPerPixel
+                @ "ShadowQuality.bAllowBetterModulatedShadows=" $ TrackedGFXSettings.ShadowQuality.bAllowBetterModulatedShadows
+                @ "ShadowQuality.bEnableForegroundShadowsOnWorld=" $ TrackedGFXSettings.ShadowQuality.bEnableForegroundShadowsOnWorld
+                @ "ShadowQuality.bEnableForegroundSelfShadowing=" $ TrackedGFXSettings.ShadowQuality.bEnableForegroundSelfShadowing
+                @ "ShadowQuality.bAllowShadowGroups=" $ TrackedGFXSettings.ShadowQuality.bAllowShadowGroups
+                @ "ShadowQuality.MinShadowGroupRadius=" $ TrackedGFXSettings.ShadowQuality.MinShadowGroupRadius
+                @ "ShadowQuality.MaxShadowGroupRadius=" $ TrackedGFXSettings.ShadowQuality.MaxShadowGroupRadius
+                @ "ShadowQuality.ShadowGroupRadiusRampUpFactor=" $ TrackedGFXSettings.ShadowQuality.ShadowGroupRadiusRampUpFactor
+                @ "ShadowQuality.ShadowGroupRampCutoff=" $ TrackedGFXSettings.ShadowQuality.ShadowGroupRampCutoff
+                @ "ParticleLODBias=" $ TrackedGFXSettings.ParticleLODBias
+                @ "AASetting=" $ TrackedGFXSettings.AASetting
+                @ "DOFBlurValResolutionFactor=" $ TrackedGFXSettings.DOFBlurValResolutionFactor
+                @ "PostProcessingPreset=" $ TrackedGFXSettings.PostProcessingPreset
+                @ "bEnableBloom=" $ TrackedGFXSettings.bEnableBloom
+                @ "LightQuality.bAllowDistortion=" $ TrackedGFXSettings.LightQuality.bAllowDistortion
+                @ "LightQuality.bAllowFilteredDistortion=" $ TrackedGFXSettings.LightQuality.bAllowFilteredDistortion
+                @ "LightQuality.bAllowLightShafts=" $ TrackedGFXSettings.LightQuality.bAllowLightShafts
+                @ "LightQuality.bAllowDynamicLights=" $ TrackedGFXSettings.LightQuality.bAllowDynamicLights
+                @ "LightQuality.bRenderLightFunctions=" $ TrackedGFXSettings.LightQuality.bRenderLightFunctions
+                @ "FoliageDrawRadiusMultiplier=" $ TrackedGFXSettings.FoliageDrawRadiusMultiplier
+                @ "OcclusionCullingQuality=" $ TrackedGFXSettings.OcclusionCullingQuality
+                @ "FXQualityDetail=" $ TrackedGFXSettings.FXQualityDetail
+                @ "bAllowBloom=" $ TrackedGFXSettings.bAllowBloom
+                @ "bMotionBlurNonGameplay=" $ TrackedGFXSettings.bMotionBlurNonGameplay
+                @ "bAllowAmbientOcclusion=" $ TrackedGFXSettings.bAllowAmbientOcclusion
+                @ "bSmoothFrameRate=" $ TrackedGFXSettings.bSmoothFrameRate
+                @ "ResX=" $ TrackedGFXSettings.ResX
+                @ "ResY=" $ TrackedGFXSettings.ResY
+                @ "bAllowDepthOfField=" $ TrackedGFXSettings.bAllowDepthOfField
+                @ "bInstancedRendering=" $ TrackedGFXSettings.bInstancedRendering
+                @ "bTextureStreaming=" $ TrackedGFXSettings.bTextureStreaming
+                @ "bTextureStreamInOnly=" $ TrackedGFXSettings.bTextureStreamInOnly
+                @ "bAllowFluidSimulation=" $ TrackedGFXSettings.bAllowFluidSimulation
+                @ "DisplayGamma=" $ TrackedGFXSettings.DisplayGamma
+            );
+        }
+    }
+}
 
 // ID.A ID.B 'Name' Location Team
 final private function LogSpawn(ROPawn ROP, ROPlayerController ROPC,
@@ -136,6 +271,8 @@ simulated event PreBeginPlay()
         class'ChatLog'.static.StaticSaveConfig();
     }
 
+    WorldInfo.Game.PlayerControllerClass = class'GSOPlayerController';
+
     super.PreBeginPlay();
 }
 
@@ -161,7 +298,24 @@ simulated event PostBeginPlay()
         }
         else
         {
-            `gerror("ERROR OPENING FILE WRITER!");
+            `gerror("ERROR OPENING STATS FILE WRITER!");
+        }
+
+        GFXLogWriter = Spawn(class'FileWriter');
+        if (Writer != None)
+        {
+            FileName = "GFXSettingsLog-" $ WorldInfo.GetMapName(True);
+            GFXLogWriter.OpenFile(FileName, FWFT_Log, ".log", True, True);
+            GFXLogWriter.Logf(
+                WorldInfo.RealTimeSeconds
+                @ TimeStamp()
+                @ Utils.GetSystemTimeStamp()
+                @ "GameStatsCollector_GFX"
+            );
+        }
+        else
+        {
+            `gerror("ERROR OPENING GFX LOG FILE WRITER!");
         }
     }
 
@@ -232,20 +386,20 @@ function NetDamage(int OriginalDamage, out int Damage, Pawn Injured,
 {
     if (InstigatedBy != None && Injured != None && Injured.Controller != None)
     {
-        // TODO: potentially expensive check. Is there a better way?
-        if (ClassIsChildOf(DamageType, class'RODmgType_MeleeBlunt')
-            || ClassIsChildOf(DamageType, class'RODmgType_MeleePierce')
-            || ClassIsChildOf(DamageType, class'RODmgType_MeleeSlash')
-        )
-        {
-            `RecordDamage(WEAPON_DAMAGE_MELEE, InstigatedBy, DamageType,
-                Injured.Controller, Damage);
-        }
-        else
-        {
+        // // TODO: potentially expensive check. Is there a better way?
+        // if (ClassIsChildOf(DamageType, class'RODmgType_MeleeBlunt')
+        //     || ClassIsChildOf(DamageType, class'RODmgType_MeleePierce')
+        //     || ClassIsChildOf(DamageType, class'RODmgType_MeleeSlash')
+        // )
+        // {
+        //     `RecordDamage(WEAPON_DAMAGE_MELEE, InstigatedBy, DamageType,
+        //         Injured.Controller, Damage);
+        // }
+        // else
+        // {
             `RecordDamage(WEAPON_DAMAGE, InstigatedBy, DamageType,
                 Injured.Controller, Damage);
-        }
+        // }
 
         LogDamage(Damage, Injured, InstigatedBy, HitLocation,
             Momentum, DamageType, DamageCauser);
@@ -298,17 +452,10 @@ function ModifyMatchWon(out byte out_WinningTeam, out byte out_WinCondition,
     super.ModifyMatchWon(out_WinningTeam, out_WinCondition, out_RoundWinningTeam);
 }
 
-final private simulated function float GetGamma()
-{
-    return class'Engine'.static.GetEngine().Client.DisplayGamma;
-}
-
-final private reliable client function ClientStartTracking()
-{
-
-}
-
 DefaultProperties
 {
     TickGroup=TG_DuringAsyncWork
 }
+
+// GFX settings tracking, do in ROPC, cache on clientside, send once on login,
+// send again if changed.
