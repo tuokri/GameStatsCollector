@@ -20,7 +20,7 @@ simulated event PreBeginPlay()
 
     if (WorldInfo.NetMode == NM_Client)
     {
-        CheckGFXSettings();
+        CheckGFXSettings(True);
     }
 }
 
@@ -207,12 +207,12 @@ final private simulated function bool SettingsChanged()
     );
 }
 
-final private simulated function CheckGFXSettings()
+final private simulated function CheckGFXSettings(optional bool bForceLog = False)
 {
     GetGFXSettings();
     GSO_NewGFXSettings.DisplayGamma = GetGamma();
 
-    if (SettingsChanged())
+    if (bForceLog || SettingsChanged())
     {
         ServerLogGFXSettings(GSO_NewGFXSettings, PlayerReplicationInfo);
     }
