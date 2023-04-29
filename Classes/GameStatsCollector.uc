@@ -476,6 +476,3 @@ DefaultProperties
 {
     TickGroup=TG_DuringAsyncWork
 }
-
-// GFX settings tracking, do in ROPC, cache on clientside, send once on login,
-// send again if changed.

@@ -14,32 +14,23 @@ struct GSO_TrackedGFXSettings extends ROUISceneSettings.GFXSettings
 var private GSO_TrackedGFXSettings GSO_CachedGFXSettings;
 var private GSO_TrackedGFXSettings GSO_NewGFXSettings;
 
-simulated event PreBeginPlay()
-{
-    super.PreBeginPlay();
-
-    if (WorldInfo.NetMode == NM_Client)
-    {
-        CheckGFXSettings(True);
-    }
-}
-
 simulated event PostBeginPlay()
 {
     super.PostBeginPlay();
 
+    GSO = GetGSO();
+
     if (WorldInfo.NetMode == NM_Client)
     {
+        CheckGFXSettings(True);
         SetTimer(5.0, True, nameof(CheckGFXSettings));
     }
-
-    GSO = GetGSO();
 }
 
 final private simulated function GetGFXSettings()
 {
-    `glog("GSO_FakeSettingsScene:" @ GSO_FakeSettingsScene);
-    `glog("GSO_RealSettingsScene:" @ GSO_RealSettingsScene);
+    // `glog("GSO_FakeSettingsScene:" @ GSO_FakeSettingsScene);
+    // `glog("GSO_RealSettingsScene:" @ GSO_RealSettingsScene);
 
     // Use real scene if it's available.
     if (GSO_RealSettingsScene != None)
