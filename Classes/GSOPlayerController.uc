@@ -200,6 +200,8 @@ final private simulated function bool SettingsChanged()
 
 final private simulated function CheckGFXSettings(optional bool bForceLog = False)
 {
+    // WorldInfo.Game.ConsoleCommand("get SystemSettings DirectionalLightmaps");
+
     GetGFXSettings();
     GSO_NewGFXSettings.DisplayGamma = GetGamma();
 

@@ -298,6 +298,14 @@ simulated event PreBeginPlay()
     WorldInfo.Game.PlayerControllerClass = class'GSOPlayerController';
 
     super.PreBeginPlay();
+
+    // TODO: just some ideas.
+    // Add stuff to System.Core.Extensions to allow loading other type of content?
+
+    // class'EditorEngine'.default.ForceLoadMods.AddItem("Asd");
+
+    // class'System'.default.DirectionalLightmaps;
+    // class'SystemSettings'.default.DirectionalLightmaps = True;
 }
 
 simulated event PostBeginPlay()
@@ -326,7 +334,7 @@ simulated event PostBeginPlay()
         }
 
         GFXLogWriter = Spawn(class'FileWriter');
-        if (Writer != None)
+        if (GFXLogWriter != None)
         {
             FileName = "GFXSettingsLog-" $ WorldInfo.GetMapName(True);
             GFXLogWriter.OpenFile(FileName, FWFT_Log, ".log", True, True);
