@@ -1,0 +1,58 @@
+{
+  "header": {
+    "world_time_start_seconds": 0.0,
+    "start_datetime": "2023-04-29T01:49:44",
+    "start_timestamp": 6584.0,
+    "tag": "GameStatsCollector"
+  },
+  "events": [
+    {
+      "event_type": "LOGIN",
+      "datetime": "2023-04-29T01:50:51.137500"
+    },
+    {
+      "event_type": "SPAWN",
+      "datetime": "2023-04-29T01:51:17.924400"
+    },
+    {
+      "event_type": "DAMAGE",
+      "datetime": "2023-04-29T01:52:29.285800"
+    },
+    {
+      "event_type": "KILL",
+      "datetime": "2023-04-29T01:52:29.285800",
+      "killer_id": 76561198021283933,
+      "killed_id": 76561198021283933,
+      "killer_team_index": 0,
+      "killed_team_index": 0,
+      "hit_location": [
+        2683.89,
+        1973.2,
+        45.04
+      ],
+      "hit_momentum": [
+        519.5,
+        -795.8,
+        381.32
+      ],
+      "damage_type": "RODmgType_Type67Grenade",
+      "hit_bone": "CHR_Spine2",
+      "hit_bone_index": 0,
+      "last_damaged_from_location": [
+        2685.17,
+        1971.24,
+        35.15
+      ],
+      "killer_score": -1,
+      "killer_match_score": -1
+    },
+    {
+      "event_type": "LOGOUT",
+      "datetime": "2023-04-29T01:52:42.067400"
+    },
+    {
+      "event_type": "ROUNDEND",
+      "datetime": "2023-04-29T01:49:44"
+    }
+  ]
+}
