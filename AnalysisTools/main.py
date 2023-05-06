@@ -1,6 +1,7 @@
 import argparse
 import dataclasses
 import datetime
+import shlex
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -15,6 +16,8 @@ test_file = Path(
 
 UDK_TIME_FMT = "%H:%M:%S"
 UDK_DATE_FMT = "%Y/%m/%d"
+
+CACHED_DT: datetime.datetime
 
 EventType = TypeVar("EventType", bound="Event")
 
@@ -46,9 +49,53 @@ class KillEvent(Event):
     hit_bone_index: int
     last_damaged_from_location: np.ndarray
     # Not tracked in earlier versions.
-    killer_score: Optional[int] = 0
+    killer_score: Optional[float] = 0
     # Not tracked in earlier versions.
-    killer_match_score: Optional[int] = 0
+    killer_match_score: Optional[float] = 0
+
+
+@dataclasses.dataclass
+class LogInEvent(Event):
+    id: int
+    name: str
+
+
+@dataclasses.dataclass
+class LogOutEvent(Event):
+    id: int
+    name: str
+
+
+@dataclasses.dataclass
+class DamageEvent(Event):
+    damage: int
+    injured_id: int
+    instigated_by_id: int
+    hit_location: np.ndarray
+    hit_momentum: np.ndarray
+    damage_type: str
+    damage_causer: str
+
+
+@dataclasses.dataclass
+class SpawnEvent(Event):
+    id: int
+    name: str
+    location: np.ndarray
+    team_index: int
+    role: str
+
+
+@dataclasses.dataclass
+class RoundEndEvent(Event):
+    winning_team: int
+
+
+@dataclasses.dataclass
+class MatchWonEvent(Event):
+    winning_team: int
+    win_condition: int  # TODO: check UScript enum names.
+    round_winning_team: int
 
 
 def parse_unique_id(a: str, b: str) -> int:
@@ -57,12 +104,22 @@ def parse_unique_id(a: str, b: str) -> int:
     return bi << 32 | ai
 
 
-def handle_login():
-    pass
+def handle_login(event: Event, parts: List[str]) -> LogInEvent:
+    player_id = parse_unique_id(parts[2], parts[3])
+    return LogInEvent(
+        **dataclasses.asdict(event),
+        id=player_id,
+        name=parts[4],
+    )
 
 
-def handle_logout():
-    pass
+def handle_logout(event: Event, parts: List[str]) -> LogOutEvent:
+    player_id = parse_unique_id(parts[2], parts[3])
+    return LogOutEvent(
+        **dataclasses.asdict(event),
+        id=player_id,
+        name=parts[4],
+    )
 
 
 def handle_kill(event: Event, parts: List[str]) -> KillEvent:
@@ -74,8 +131,8 @@ def handle_kill(event: Event, parts: List[str]) -> KillEvent:
     momentum = np.array([float(x) for x in parts[9].split(",")])
     ldfl = np.array([float(x) for x in parts[13].split(",")])
     len_parts = len(parts)
-    killer_score = -1 if len_parts < 15 else int(parts[14])
-    killer_match_score = -1 if len_parts < 16 else int(parts[15])
+    killer_score = -1 if len_parts < 15 else float(parts[14])
+    killer_match_score = -1 if len_parts < 16 else float(parts[15])
 
     return KillEvent(
         **dataclasses.asdict(event),
@@ -94,42 +151,97 @@ def handle_kill(event: Event, parts: List[str]) -> KillEvent:
     )
 
 
-def handle_dmg():
-    pass
+def handle_damage(event: Event, parts: List[str]) -> DamageEvent:
+    injured_id = parse_unique_id(parts[3], parts[4])
+    instigated_by_id = parse_unique_id(parts[5], parts[6])
+    hit_loc = np.array([float(x) for x in parts[7].split(",")])
+    momentum = np.array([float(x) for x in parts[8].split(",")])
+    return DamageEvent(
+        **dataclasses.asdict(event),
+        damage=int(parts[2]),
+        injured_id=injured_id,
+        instigated_by_id=instigated_by_id,
+        hit_location=hit_loc,
+        hit_momentum=momentum,
+        damage_type=parts[9],
+        damage_causer=parts[10],
+    )
 
 
-def handle_round_end():
-    pass
+def handle_round_end(event: Event, parts: List[str]) -> RoundEndEvent:
+    # Earlier versions were missing WorldInfo.RealTimeSeconds.
+    # This is a workaround that uses the last line's timestamp.
+    if len(parts) < 3:
+        event.datetime = CACHED_DT + datetime.timedelta(milliseconds=1)
+
+    return RoundEndEvent(
+        **dataclasses.asdict(event),
+        winning_team=int(parts[1]),
+    )
+
+
+def handle_match_won(event: Event, parts: List[str]) -> MatchWonEvent:
+    # Earlier versions were missing WorldInfo.RealTimeSeconds.
+    # This is a workaround that uses the last line's timestamp.
+    if len(parts) < 5:
+        event.datetime = CACHED_DT + datetime.timedelta(milliseconds=1)
+
+    return MatchWonEvent(
+        **dataclasses.asdict(event),
+        winning_team=int(parts[1]),
+        win_condition=int(parts[2]),
+        round_winning_team=int(parts[3]),
+    )
+
+
+def handle_spawn(event: Event, parts: List[str]) -> SpawnEvent:
+    player_id = parse_unique_id(parts[2], parts[3])
+    location = np.array([float(x) for x in parts[5].split(",")])
+    return SpawnEvent(
+        **dataclasses.asdict(event),
+        id=player_id,
+        name=parts[4],
+        location=location,
+        team_index=int(parts[6]),
+        role=parts[7],
+    )
 
 
 def handle_game_stats_line(
         line: str,
         start_dt: datetime.datetime,
 ) -> EventType:
-    parts = line.strip().split(" ")
+    global CACHED_DT
+
+    parts = shlex.split(line.strip())
     print(parts)
 
     e_type = parts[0]
     timestamp = float(parts[1])
     dt = start_dt + datetime.timedelta(seconds=timestamp)
+    CACHED_DT = dt
     dt_str = dt.isoformat()
 
     event: EventType = Event(
         event_type=e_type,
-        datetime=dt.isoformat(),
+        datetime=dt_str,
     )
 
     match e_type:
         case "LOGIN":
-            pass
+            event = handle_login(event, parts)
         case "LOGOUT":
-            pass
+            event = handle_logout(event, parts)
         case "DMG" | "DAMAGE":
-            pass
+            event = handle_damage(event, parts)
         case "KILL":
             event = handle_kill(event, parts)
         case "SPAWN":
-            pass
+            event = handle_spawn(event, parts)
+        case "ROUNDEND":
+            event = handle_round_end(event, parts)
+        case "MATCHWON":
+            event = handle_match_won(event, parts)
 
     return event
 

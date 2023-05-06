@@ -255,13 +255,23 @@ final private function LogLogin(ROPlayerReplicationInfo ROPRI)
 
 final private function LogRoundEnd(byte WinningTeamIndex)
 {
-    WriteQueue.AddItem("ROUNDEND" @ WinningTeamIndex);
+    WriteQueue.AddItem(
+        "ROUNDEND"
+        @ WorldInfo.RealTimeSeconds
+        @ WinningTeamIndex
+    );
 }
 
 final private function LogMatchWon(byte WinningTeam, byte WinCondition,
     byte RoundWinningTeam)
 {
-    WriteQueue.AddItem("MATCHWON" @ WinningTeam @ WinCondition @ RoundWinningTeam);
+    WriteQueue.AddItem(
+        "MATCHWON"
+        @ WorldInfo.RealTimeSeconds
+        @ WinningTeam
+        @ WinCondition
+        @ RoundWinningTeam
+    );
 }
 
 final private function ProcessWriteQueue()
