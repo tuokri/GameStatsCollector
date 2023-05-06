@@ -2,6 +2,7 @@ import argparse
 import dataclasses
 import datetime
 import shlex
+from enum import IntEnum
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -94,8 +95,28 @@ class RoundEndEvent(Event):
 @dataclasses.dataclass
 class MatchWonEvent(Event):
     winning_team: int
-    win_condition: int  # TODO: check UScript enum names.
+    win_condition: str
     round_winning_team: int
+
+
+class WinCondition(IntEnum):
+    ROWC_AllObjectiveCaptured = 0
+    ROWC_ScoreLimit = 1
+    ROWC_TimeLimit = 2
+    ROWC_ReinforcementsDepleted = 3
+    ROWC_LockDown = 4
+    ROWC_OverTime = 5
+    ROWC_MostObjectives = 6
+    ROWC_BetterTime = 7
+    ROWC_MostPoints = 8
+    ROWC_SuddenDeath = 9
+    ROWC_MatchEndMostRounds = 10
+    ROWC_MatchEndScoredPoints = 11
+    ROWC_MatchEndNeutralScoredPoints = 12
+    ROWC_MatchEndReinforcements = 13
+    ROWC_MatchEndObjectivesCaptured = 14
+    ROWC_MatchEndTime = 15
+    ROWC_MatchEndWonSkirmish = 16
 
 
 def parse_unique_id(a: str, b: str) -> int:
@@ -189,7 +210,7 @@ def handle_match_won(event: Event, parts: List[str]) -> MatchWonEvent:
     return MatchWonEvent(
         **dataclasses.asdict(event),
         winning_team=int(parts[1]),
-        win_condition=int(parts[2]),
+        win_condition=WinCondition(int(parts[2])).name,
         round_winning_team=int(parts[3]),
     )
 
@@ -214,7 +235,7 @@ def handle_game_stats_line(
     global CACHED_DT
 
     parts = shlex.split(line.strip())
-    print(parts)
+    # print(parts)
 
     e_type = parts[0]
     timestamp = float(parts[1])
@@ -248,7 +269,7 @@ def handle_game_stats_line(
 
 def handle_header(header: str) -> Tuple[datetime.datetime, Header]:
     parts = header.strip().split(" ")
-    print("header:", parts)
+    # print("header:", parts)
     world_time_start = float(parts[0])
     start_date = datetime.datetime.strptime(parts[1], UDK_DATE_FMT)
     start_time = datetime.datetime.strptime(parts[3], UDK_TIME_FMT).time()
@@ -278,7 +299,7 @@ def convert_game_stats(path: Path, out: Path):
     with out.open(mode="wb") as out_file:
         with path.open(encoding="utf-8") as in_file:
             start_dt, header = handle_header(in_file.readline())
-            print(header)
+            # print(header)
             stats["header"] = header
 
             for line in in_file:
