@@ -11,6 +11,7 @@ from typing import TypeVar
 
 import numpy as np
 import orjson
+import pandas
 
 test_file = Path(
     r"O:\rs2server\ROGame\Stats\GameStats-VNSK-Compound-20230429.014944.txt")
@@ -286,7 +287,7 @@ def handle_header(header: str) -> Tuple[datetime.datetime, Header]:
     )
 
 
-def convert_game_stats(path: Path, out: Path):
+def convert_game_stats(path: Path, out: Path) -> dict:
     """Convert raw game stat text files from GameStatsCollector
     to a JSON format. Timestamps are parsed in UTC
     format, regardless of what the actual timezone used by the
@@ -294,7 +295,15 @@ def convert_game_stats(path: Path, out: Path):
     """
     stats = {
         "header": None,
-        "events": [],
+        "events": {
+            "LOGIN": [],
+            "LOGOUT": [],
+            "DMG": [],
+            "KILL": [],
+            "SPAWN": [],
+            "ROUNDEND": [],
+            "MATCHWON": [],
+        },
     }
     with out.open(mode="wb") as out_file:
         with path.open(encoding="utf-8") as in_file:
@@ -304,7 +313,7 @@ def convert_game_stats(path: Path, out: Path):
 
             for line in in_file:
                 event = handle_game_stats_line(line, start_dt=start_dt)
-                stats["events"].append(event)
+                stats["events"][event.event_type].append(event)
 
             out_file.write(orjson.dumps(
                 stats,
@@ -313,6 +322,8 @@ def convert_game_stats(path: Path, out: Path):
                         | orjson.OPT_SERIALIZE_NUMPY),
             ))
 
+    return stats
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -320,10 +331,16 @@ def main():
     ap.add_argument("out", help="JSON output file")
     args = ap.parse_args()
 
-    convert_game_stats(
+    stats = convert_game_stats(
         Path(args.file).absolute(),
         Path(args.out).absolute(),
     )
+
+    kills = pandas.DataFrame(stats["events"]["KILL"])
+    print(kills)
+
+    dmgs = pandas.DataFrame(stats["events"]["DMG"])
+    print(dmgs)
 
 
 if __name__ == "__main__":
